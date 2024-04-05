@@ -8,7 +8,7 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="7420108f-f9e8-40fd-a223-53e24b5f00a2"
+    Name="FlashDictionary"
     Publisher="CN=yasue"
     Version="1.0.0.0" />
 
@@ -16,7 +16,7 @@
 
   <Properties>
     <DisplayName>FlashDictionary</DisplayName>
-    <PublisherDisplayName>yasue</PublisherDisplayName>
+    <PublisherDisplayName>junyasu0124</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
