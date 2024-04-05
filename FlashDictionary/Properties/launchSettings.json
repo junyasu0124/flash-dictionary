@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "FlashDictionary (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "FlashDictionary (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
