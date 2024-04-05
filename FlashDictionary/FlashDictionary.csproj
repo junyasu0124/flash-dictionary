@@ -20,6 +20,9 @@
     <PackageProjectUrl>https://github.com/junyasu0124/flash-dictionary</PackageProjectUrl>
     <RepositoryUrl>https://github.com/junyasu0124/flash-dictionary</RepositoryUrl>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Tasktray\TasktrayIcon.xaml" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -32,6 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.0.124" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240311000" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.22621.3233" />
@@ -52,6 +56,11 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Tasktray\TasktrayIcon.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <!-- 
