@@ -19,8 +19,11 @@
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/junyasu0124/flash-dictionary</PackageProjectUrl>
     <RepositoryUrl>https://github.com/junyasu0124/flash-dictionary</RepositoryUrl>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Data\Dictionaries\nouns.json" />
+    <None Remove="Data\Dictionaries\verbs.json" />
     <None Remove="Tasktray\TasktrayIcon.xaml" />
   </ItemGroup>
 
@@ -32,6 +35,8 @@
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+    <Content Include="Data\Dictionaries\nouns.json" />
+    <Content Include="Data\Dictionaries\verbs.json" />
   </ItemGroup>
 
   <ItemGroup>

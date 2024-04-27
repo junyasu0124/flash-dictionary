@@ -7,7 +7,7 @@ namespace FlashDictionary;
 /// </summary>
 public partial class App : Application
 {
-  public static MainWindow Window { get; set; }
+  public static MainWindow? Window { get; set; }
 
   /// <summary>
   /// Initializes the singleton application object.  This is the first line of authored code
