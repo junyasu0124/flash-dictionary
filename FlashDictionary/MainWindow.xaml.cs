@@ -1,12 +1,15 @@
 using FlashDictionary.Core.Dictionary;
 using FlashDictionary.Core.Translation;
 using FlashDictionary.Core.Translation.InDictionaries.Normalization;
+using FlashDictionary.Util;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
@@ -58,6 +61,22 @@ public sealed partial class MainWindow : Window
     }
 
     await Base.LoadData();
+
+    Input_Box.Focus(FocusState.Programmatic);
+
+    var suggestionsListView = Input_Box.DescendantsFirstOrDefault<ListView>();
+    if (suggestionsListView is not null)
+    {
+      Debug.WriteLine("SuggestionsListView is not null!");
+      suggestionsListView.ItemClick += (_, _) => Debug.WriteLine("SuggestionsListViewItemClicked!");
+    }
+
+    while (true)
+    {
+      await Task.Delay(5000);
+      var list = Input_Box.DescendantsFirstOrDefault<ListView>();
+      var popup = Input_Box.DescendantsFirstOrDefault<Popup>();
+    }
   }
 
   private readonly int translationDebounceMilliseconds = 500;
@@ -66,7 +85,7 @@ public sealed partial class MainWindow : Window
 #pragma warning restore CS0649, IDE0044
   private void Input_Box_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
   {
-    if (args.Reason != AutoSuggestionBoxTextChangeReason.SuggestionChosen)
+    if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
     {
       sender.ItemsSource = null;
       Debounce(Translate, translationDebounceMilliseconds, translationDebounceTokenSource);
@@ -75,6 +94,8 @@ public sealed partial class MainWindow : Window
   private void Input_Box_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
   {
     sender.ItemsSource = null;
+    if (Input_Box.Text != args.QueryText)
+      Input_Box.Text = args.QueryText;
     Debounce(Translate, translationDebounceMilliseconds, translationDebounceTokenSource);
   }
 

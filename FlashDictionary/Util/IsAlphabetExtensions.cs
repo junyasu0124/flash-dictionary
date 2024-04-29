@@ -1,6 +1,6 @@
 ﻿namespace FlashDictionary.Util;
 
-public static class IsAlphabetExtension
+internal static class IsAlphabetExtensions
 {
   public static bool IsAlphabet(this char c)
   {

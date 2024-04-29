@@ -64,7 +64,7 @@ internal class Result((string Word, string[] Meanings) item)
   }
   private List<Paragraph> GenerateMeaningsParagraph()
   {
-    var foregroundInBracket = new SolidColorBrush(new UISettings().GetColorValue(UIColorType.AccentLight1));
+    var foregroundInBracket = new SolidColorBrush(new UISettings().GetColorValue(UIColorType.AccentLight2));
 
     List<Paragraph> paragraphs = [];
 

@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace FlashDictionary.Core.Dictionary;
 
-internal static class CharExtension
+internal static class CharExtensions
 {
   public static bool IsNull(this char value)
   {
