@@ -48,7 +48,7 @@ internal static class LoadDictionaryFile
       var start = DateTime.Now;
       SortedDictionary<string, List<Position>>? items = await ReadAddingFile(filePath, format, encoding);
       Debug.WriteLine($"---{(DateTime.Now - start).TotalMilliseconds} ms---");
-        
+
       if (items.Count == 0)
       {
         return LoadState.DataNotWritten;
@@ -347,16 +347,9 @@ internal static class LoadDictionaryFile
                   currentOffset++;
                   if (currentKey != previousKey.Value)
                   {
-                    try
-                    {
-                      positions.Add(previousKey.Value, new(offsetTemp, currentOffset - offsetTemp));
-                      previousKey = currentKey;
-                      offsetTemp = currentOffsetTemp;
-                    }
-                    catch (Exception e)
-                    {
-
-                    }
+                    positions.Add(previousKey.Value, new(offsetTemp, currentOffset - offsetTemp));
+                    previousKey = currentKey;
+                    offsetTemp = currentOffsetTemp;
                   }
                 }
                 else
@@ -517,7 +510,6 @@ internal static class LoadDictionaryFile
         }
         IEnumerable<(TripleChar key, Position? position)> OrganizeWriteAddedAsyncRetuned(((TripleChar key, long offset)[] offsets, long fileLegnth) returned)
         {
-          List<(TripleChar key, Position position)> result = [];
           var items = returned.offsets.GroupBy(x => x.key, new TripleCharEqualityComparer()).OrderBy(x => x.Key, new TripleCharComparer()).Select(x => (key: x.Key, offset: x.Min(y => y.offset))).ToArray();
 
           for (var i = 0; i < items.Length - 1; i++)
@@ -545,7 +537,7 @@ internal static class LoadDictionaryFile
         }
       }
     }
-    catch (Exception e)
+    catch
     {
       return LoadState.UnknownErrored;
     }

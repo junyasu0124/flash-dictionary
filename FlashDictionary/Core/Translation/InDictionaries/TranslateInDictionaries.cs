@@ -18,14 +18,7 @@ internal static class TranslateInDictionaries
 
       var sentencePreprocessed = sentence.ToLower().RepeatNormalization().Select(x => x.SeparatorNormalization(sentence)).SelectMany(x => x).ToArray();
 
-      var sentenceVariations = sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x).Concat(sentencePreprocessed.Select(x => x.ExtractNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y))).Distinct().ToArray();
-
-      sentenceVariations = sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x)
-        .Concat(
-          sentencePreprocessed.Select(x => x.SplitNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y))
-        ).Distinct().ToArray();
-
-      sentenceVariations = ((IEnumerable<string>)[
+      var sentenceVariations = ((IEnumerable<string>)[
         .. sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x),
         .. sentencePreprocessed.Select(x => x.ExtractNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y)),
         .. sentencePreprocessed.Select(x => x.SplitNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y)),
@@ -91,7 +84,7 @@ internal static class TranslateInDictionaries
         (Dictionary<string, List<(string Original, string[] Meaning)>>? values, List<string>? suggestions) value;
         if (originalSearchSentenceKey.HasValue && sentencesVariation.Key == originalSearchSentenceKey.Value)
         {
-          value = GetValueInDictionaries.GetValue(sentencesVariation.Key, sentence.ToLower());
+          value = GetValueInDictionaries.GetValue(sentencesVariation.Key, sentence.ToLowerInvariant());
           suggestions = value.suggestions!;
         }
         else

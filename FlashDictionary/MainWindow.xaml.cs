@@ -78,8 +78,8 @@ public sealed partial class MainWindow : Window
     Debounce(Translate, translationDebounceMilliseconds, translationDebounceTokenSource);
   }
 
-  private string? previousSuggestionsText = null;
-  private List<string>? previousSuggestions = null;
+  private string? previousSuggestionsText;
+  private List<string>? previousSuggestions;
   private CancellationTokenSource? translatedByGoogleTokenSource;
   private void Translate()
   {

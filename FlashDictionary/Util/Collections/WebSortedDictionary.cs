@@ -22,16 +22,7 @@ class WebSortedDictionary
       RightLeft
     }
 
-    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
-    //public int Compare(long x, long y)
-    //{
-    //    if (x == y) return 0;
-    //    if (IsBids ? (x > y) : (x < y)) return -1;
-    //    return 1;
-    //}
-
     private Node? root;
-    //public Node? GetRoot => root;
 
     private int count;
     private int version;
@@ -522,7 +513,7 @@ class WebSortedDictionary
       }
     }
 
-    public struct Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>, IEnumerator, ISerializable, IDeserializationCallback
+    public struct Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>, IEnumerator, ISerializable, IDeserializationCallback, IEquatable<Enumerator>
     {
       private readonly SortedDictionary<TKey, TValue> _tree;
       private readonly int _version;
@@ -530,15 +521,13 @@ class WebSortedDictionary
       private readonly Stack<Node> _stack;
       private Node? _current;
 
-      //private readonly bool _reverse;
-
       public Enumerator(SortedDictionary<TKey, TValue> orderboard)
       {
         _tree = orderboard;
         _version = orderboard.version;
 
         // 2 log(n + 1) is the maximum height.
-        _stack = new Stack<Node>(2 * (int)Log2(orderboard.Count + 1));
+        _stack = new Stack<Node>(2 * Log2(orderboard.Count + 1));
         _current = null;
 
         Initialize();
@@ -632,6 +621,11 @@ class WebSortedDictionary
       }
 
       void IEnumerator.Reset() => Reset();
+
+      bool IEquatable<SortedDictionary<TKey, TValue>.Enumerator>.Equals(SortedDictionary<TKey, TValue>.Enumerator other)
+      {
+        throw new NotImplementedException();
+      }
     }
   }
 }

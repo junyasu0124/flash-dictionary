@@ -13,9 +13,6 @@ internal class FixedDictionary<TKey, TValue>(int capacity) where TKey : notnull
   private readonly SortedDictionary<TKey, LinkedListNode<KeyValuePair<TKey, TValue>>> dictionary = [];
   private readonly LinkedList<KeyValuePair<TKey, TValue>> linkedList = new();
 
-  public delegate void RemoveHandler(TKey key, TValue value);
-  public event RemoveHandler? Removed;
-
   public void Add(TKey key, TValue value)
   {
     if (dictionary.ContainsKey(key))
@@ -61,9 +58,6 @@ internal class FixedDictionary<TKey, TValue>(int capacity) where TKey : notnull
     if (dictionary.TryGetValue(key, out LinkedListNode<KeyValuePair<TKey, TValue>>? node))
     {
       dictionary.Remove(key);
-
-      Removed?.Invoke(node.Value.Key, node.Value.Value);
-
       linkedList.Remove(node);
       return true;
     }
@@ -79,9 +73,6 @@ internal class FixedDictionary<TKey, TValue>(int capacity) where TKey : notnull
     if (oldestNode == null)
       return;
     dictionary.Remove(oldestNode.Value.Key);
-
-    Removed?.Invoke(oldestNode.Value.Key, oldestNode.Value.Value);
-
     linkedList.RemoveFirst();
   }
 
