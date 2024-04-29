@@ -72,34 +72,37 @@ internal class Result((string Word, string[] Meanings) item)
     {
       List<Range> bracketPairs = [];
 
-      // true; left brackets, false: right brackets
-      bool searchingMode = true;
+      char? targetLeft = null;
+      char? targetRight = null;
       int leftBracketIndex = -1;
-      int searchingRightBracketIndex = -1;
+      int numberOfLeftBrackets = 0;
       for (var i = 0; i < meaning.Length; i++)
       {
-        if (searchingMode)
+        if (numberOfLeftBrackets == 0)
         {
-          var index = meaning.IndexOfAny(leftBrackets, i);
-          if (index == -1)
-          {
-            break;
-          }
-          leftBracketIndex = index;
-          searchingMode = false;
-          searchingRightBracketIndex = Array.IndexOf(leftBrackets, meaning.AsSpan()[index]);
-          i = index;
+          var leftIndex = Array.IndexOf(leftBrackets, meaning[i]);
+          if (leftIndex == -1)
+            continue;
+          targetLeft = meaning[i];
+          targetRight = rightBrackets[leftIndex];
+          leftBracketIndex = i;
+          numberOfLeftBrackets = 1;
         }
         else
         {
-          var index = meaning.IndexOf(rightBrackets[searchingRightBracketIndex], i);
-          if (index == -1)
+          if (meaning[i] == targetLeft)
           {
-            break;
+            numberOfLeftBrackets++;
           }
-          bracketPairs.Add(new Range(leftBracketIndex, index));
-          searchingMode = true;
-          i = index;
+          else if (meaning[i] == targetRight)
+          {
+            numberOfLeftBrackets--;
+            if (numberOfLeftBrackets == 0)
+            {
+              bracketPairs.Add(new Range(leftBracketIndex, i));
+              targetRight = null;
+            }
+          }
         }
       }
 
