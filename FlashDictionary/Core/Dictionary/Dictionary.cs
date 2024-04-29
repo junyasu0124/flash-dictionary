@@ -4,7 +4,15 @@ namespace FlashDictionary.Core.Dictionary;
 
 internal static class Dictionary
 {
-  public static SortedDictionary<CharPair, Position[]?>? Positions { get; set; } = null;
+  public static SortedDictionary<TripleChar, Position[]?>? Positions { get; private set; } = null;
+  public static void SetPositions(SortedDictionary<TripleChar, Position[]?> data)
+  {
+    Positions = data;
+  }
+  public static void SetPositions(Dictionary<TripleChar, Position[]?> data)
+  {
+    Positions = new(data, new TripleCharComparer());
+  }
 
 
   public static string DictionaryDataFileName { get; } = "dictionary.dictdata";

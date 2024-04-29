@@ -18,26 +18,27 @@ internal static class Concat
     if (words.Length == 1)
     {
       yield return sentence;
-      yield break;
     }
-
-    StringBuilder builder = new();
-    foreach (var combination in GenerateCombinations(words.Length - 1))
+    else
     {
-      for (var i = 0; i < words.Length; i++)
+      StringBuilder builder = new();
+      foreach (var combination in GenerateCombinations(words.Length - 1))
       {
-        if (i != words.Length - 1 && combination[i])
+        for (var i = 0; i < words.Length; i++)
         {
-          builder.Append(words[i]);
-          builder.Append(' ');
+          if (i != words.Length - 1 && combination[i])
+          {
+            builder.Append(words[i]);
+            builder.Append(' ');
+          }
+          else
+          {
+            builder.Append(words[i]);
+          }
         }
-        else
-        {
-          builder.Append(words[i]);
-        }
+        yield return builder.ToString();
+        builder.Clear();
       }
-      yield return builder.ToString();
-      builder.Clear();
     }
   }
 

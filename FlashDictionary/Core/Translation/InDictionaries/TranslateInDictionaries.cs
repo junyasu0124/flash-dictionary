@@ -1,4 +1,6 @@
-﻿using FlashDictionary.Core.Translation.InDictionaries.Normalization;
+﻿using FlashDictionary.Core.Dictionary;
+using FlashDictionary.Core.Translation.InDictionaries;
+using FlashDictionary.Core.Translation.InDictionaries.Normalization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,7 @@ namespace FlashDictionary.Core.Translation;
 
 internal static class TranslateInDictionaries
 {
-  public static Results? Translate(string sentence, out int searchedWordCount)
+  public static Results? Translate(string sentence, out int searchedWordCount, out List<string> suggestions)
   {
     if (!string.IsNullOrWhiteSpace(sentence) && Dictionary.Dictionary.Positions != null)
     {
@@ -17,6 +19,17 @@ internal static class TranslateInDictionaries
       var sentencePreprocessed = sentence.ToLower().RepeatNormalization().Select(x => x.SeparatorNormalization(sentence)).SelectMany(x => x).ToArray();
 
       var sentenceVariations = sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x).Concat(sentencePreprocessed.Select(x => x.ExtractNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y))).Distinct().ToArray();
+
+      sentenceVariations = sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x)
+        .Concat(
+          sentencePreprocessed.Select(x => x.SplitNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y))
+        ).Distinct().ToArray();
+
+      sentenceVariations = ((IEnumerable<string>)[
+        .. sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x),
+        .. sentencePreprocessed.Select(x => x.ExtractNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y)),
+        .. sentencePreprocessed.Select(x => x.SplitNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y)),
+      ]).Distinct().ToArray();
 
       var sentencesVariations = sentenceVariations.Select(x =>
       {
@@ -39,7 +52,7 @@ internal static class TranslateInDictionaries
 
         var words = x.Split((char[])['-', '_', ' '], StringSplitOptions.None);
 
-        var variationWords = words.Select(x => x.BaseNormalization().Select(y => y.SplitNormalization().Select(z => z.PronounNormalization()).SelectMany(a => a)).SelectMany(b => b).Distinct().ToArray()).ToArray();
+        var variationWords = words.Select(x => x.BaseNormalization().Select(y => y.PronounNormalization()).SelectMany(b => b).Distinct().ToArray()).ToArray();
 
         var combinations = Combinations(variationWords.Select(x => x.Length - 1).ToArray());
 
@@ -63,24 +76,36 @@ internal static class TranslateInDictionaries
       }).SelectMany(x => x).Distinct().ToArray();
 
       searchedWordCount = sentenceVariations.Length;
+      suggestions = [];
 
       Results results = new();
 
-      var groupedSentencesVariations = sentencesVariations.Where(x => string.IsNullOrWhiteSpace(x) == false).GroupBy(InDictionaries.GetValueInDictionaries.ConvertKeyToKeyInPositions);
-      using (var getValue = new InDictionaries.GetValueInDictionaries())
-      {
-        foreach (var sentencesVariation in groupedSentencesVariations)
-        {
-          var dictionary = getValue.GetValue(sentencesVariation.Key);
-          if (dictionary.Count == 0)
-            continue;
+      var groupedSentencesVariations = sentencesVariations.Where(x => string.IsNullOrWhiteSpace(x) == false).GroupBy(GetValueInDictionaries.ConvertKeyToKeyInPositions);
 
-          foreach (var sentenceVariation in sentencesVariation)
+      TripleChar? originalSearchSentenceKey = GetValueInDictionaries.ConvertKeyToKeyInPositions(sentence);
+      if (sentence.Length <= 2)
+        originalSearchSentenceKey = null;
+
+      foreach (var sentencesVariation in groupedSentencesVariations)
+      {
+        (Dictionary<string, List<(string Original, string[] Meaning)>>? values, List<string>? suggestions) value;
+        if (originalSearchSentenceKey.HasValue && sentencesVariation.Key == originalSearchSentenceKey.Value)
+        {
+          value = GetValueInDictionaries.GetValue(sentencesVariation.Key, sentence.ToLower());
+          suggestions = value.suggestions!;
+        }
+        else
+        {
+          value = GetValueInDictionaries.GetValue(sentencesVariation.Key, null);
+        }
+        if (value.values == null || value.values.Count == 0)
+          continue;
+
+        foreach (var sentenceVariation in sentencesVariation)
+        {
+          if (value.values.TryGetValue(sentenceVariation, out var data))
           {
-            if (dictionary.TryGetValue(sentenceVariation, out var data))
-            {
-              results.AddItems(data);
-            }
+            results.AddItems(data);
           }
         }
       }
@@ -88,10 +113,16 @@ internal static class TranslateInDictionaries
       return results;
     }
     searchedWordCount = 0;
+    suggestions = [];
     return null;
   }
 
-  private static List<List<int>> Combinations(int[] nums)
+  /// <summary>
+  /// [1,2,2] => [[0,0,0][0,0,1][0,0,2][0,1,0][0,1,1][0,1,2][0,2,0][0,2,1][0,2,2][1,0,0][1,0,1][1,0,2][1,1,0][1,1,1][1,1,2][1,2,0][1,2,1][1,2,2]]
+  /// </summary>
+  /// <param name="nums"></param>
+  /// <returns></returns>
+  public static List<List<int>> Combinations(int[] nums)
   {
     List<List<int>> combinations = [];
     GenerateCombinations(nums, 0, [], combinations);

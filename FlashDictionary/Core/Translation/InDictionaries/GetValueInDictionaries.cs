@@ -26,6 +26,7 @@ file static class GetValueInDictionariesCache
         DisposeFileStream();
     };
   }
+
   private static void DisposeFileStream()
   {
     fileStream?.Dispose();
@@ -34,18 +35,18 @@ file static class GetValueInDictionariesCache
     fileStreamTimer = null;
   }
 
-  private static readonly FixedDictionary<CharPair, Dictionary<string, List<(string Original, string[] Meaning)>>> valuesCache = new(5);
-  public static bool TryGetCachedValue(CharPair key, out Dictionary<string, List<(string Original, string[] Meaning)>>? value)
+  private readonly static FixedDictionary<TripleChar, Dictionary<string, List<(string Original, string[] Meaning)>>> valuesCache = new(20);
+  public static bool TryGetCachedValue(TripleChar key, out Dictionary<string, List<(string Original, string[] Meaning)>>? value)
   {
     return valuesCache.TryGetValue(key, out value);
   }
-  public static void AddCache(CharPair key, Dictionary<string, List<(string Original, string[] Meaning)>> value)
+  public static void AddCache(TripleChar key, Dictionary<string, List<(string Original, string[] Meaning)>> value)
   {
     SetValuesCacheTimer();
 
     valuesCache.Add(key, value);
   }
-  public static void AddCacheRange(IEnumerable<KeyValuePair<CharPair, Dictionary<string, List<(string Original, string[] Meaning)>>>> items)
+  public static void AddCacheRange(IEnumerable<KeyValuePair<TripleChar, Dictionary<string, List<(string Original, string[] Meaning)>>>> items)
   {
     SetValuesCacheTimer();
 
@@ -63,6 +64,7 @@ file static class GetValueInDictionariesCache
     valuesCacheTimer.Elapsed += (_, _) =>
     {
       valuesCache.Clear();
+      GC.Collect(2);
     };
   }
 
@@ -92,27 +94,30 @@ file static class GetValueInDictionariesCache
   }
 }
 
-internal class GetValueInDictionaries : IDisposable
+internal static class GetValueInDictionaries
 {
-  private readonly FixedDictionary<CharPair, Dictionary<string, List<(string Original, string[] Meaning)>>> loaded = new(20);
-
-  public void Dispose()
+  public static (Dictionary<string, List<(string Original, string[] Meaning)>>? values, List<string>? suggestions) GetValue(TripleChar key, string? returnSuggestions = null)
   {
-    GetValueInDictionariesCache.AddCacheRange(loaded.GetLatestValues(20));
-    loaded.Clear();
-  }
-
-  public Dictionary<string, List<(string Original, string[] Meaning)>> GetValue(CharPair key)
-  {
-    if (loaded.TryGetValue(key, out var loadedValue))
-      return loadedValue;
+    List<string>? suggestions = returnSuggestions == null ? null : [];
 
     if (GetValueInDictionariesCache.TryGetCachedValue(key, out var cachedValue))
-      return cachedValue!;
+    {
+      if (cachedValue != null && returnSuggestions != null)
+      {
+        foreach (var item in cachedValue)
+        {
+          if (item.Key.StartsWith(returnSuggestions))
+          {
+            suggestions!.Add(item.Key);
+          }
+        }
+      }
+      return (cachedValue, suggestions);
+    }
 
     var position = GetPositions(key);
     if (position == null)
-      return [];
+      return ([], null);
 
     var result = new Dictionary<string, List<(string Original, string[] Meaning)>>();
 
@@ -135,6 +140,11 @@ internal class GetValueInDictionaries : IDisposable
               result[loweredKey] = value;
             }
             value.Add((first, second.Split(DictionaryDataSeparatorBetweenMeanings, StringSplitOptions.RemoveEmptyEntries)));
+
+            if (returnSuggestions != null && loweredKey.StartsWith(returnSuggestions))
+            {
+              suggestions!.Add(loweredKey);
+            }
           }
           catch { }
         }
@@ -143,7 +153,7 @@ internal class GetValueInDictionaries : IDisposable
 
     GetValueInDictionariesCache.AddCache(key, result);
 
-    return result;
+    return (result, suggestions);
   }
 
   /// <summary>
@@ -152,29 +162,9 @@ internal class GetValueInDictionaries : IDisposable
   /// <param name="key">A word to convert.</param>
   /// <returns>A key in <see cref="Positions"/> format.</returns>
   /// <exception cref="ArgumentNullException"></exception>
-  public static CharPair ConvertKeyToKeyInPositions(string key)
+  public static TripleChar ConvertKeyToKeyInPositions(string key)
   {
-    if (string.IsNullOrWhiteSpace(key))
-      throw new ArgumentNullException(nameof(key));
-    else if (key.Length == 1)
-    {
-      if (key[0].IsAlphabet())
-        return new(key[0]);
-      else
-        return new("#");
-    }
-    else if (key[0].IsAlphabet() == false)
-    {
-      return new("#");
-    }
-    else if (key[1].IsAlphabet())
-    {
-      return new(key[0], key[1]);
-    }
-    else
-    {
-      return new(key[0], '#');
-    }
+    return ConvertKeyToKeyInPositions(key.AsSpan());
   }
   /// <summary>
   /// Convert word into a <see cref="Positions"/> key format.
@@ -182,32 +172,49 @@ internal class GetValueInDictionaries : IDisposable
   /// <param name="key">A word to convert.</param>
   /// <returns>A key in <see cref="Positions"/> format.</returns>
   /// <exception cref="ArgumentNullException"></exception>
-  public static CharPair ConvertKeyToKeyInPositions(ReadOnlySpan<char> key)
+  public static TripleChar ConvertKeyToKeyInPositions(ReadOnlySpan<char> key)
   {
     if (key.IsEmpty)
       throw new ArgumentNullException(nameof(key));
-    else if (key.Length == 1)
+
+    if (key[0].IsAlphabet() == false)
     {
-      if (key[0].IsAlphabet())
-        return new(key[0]);
+      return new('#');
+    }
+
+    if (key.Length == 1)
+    {
+      return new(key[0]);
+    }
+
+    if (key.Length == 2)
+    {
+      if (key[1].IsAlphabet())
+      {
+        return new(key[0], key[1]);
+      }
       else
-        return new("#");
+      {
+        return new(key[0], '#');
+      }
     }
-    else if (key[0].IsAlphabet() == false)
-    {
-      return new("#");
-    }
-    else if (key[1].IsAlphabet())
-    {
-      return new(key[0], key[1]);
-    }
-    else
+
+    if (key[1].IsAlphabet() == false)
     {
       return new(key[0], '#');
     }
+
+    if (key[2].IsAlphabet())
+    {
+      return new(key[0], key[1], key[2]);
+    }
+    else
+    {
+      return new(key[0], key[1], '#');
+    }
   }
 
-  private static Position[]? GetPositions(CharPair key)
+  private static Position[]? GetPositions(TripleChar key)
   {
     if (Positions == null)
       throw new InvalidOperationException("FlashDictionary.Core.Dictionary.Dictionary.Positions is not loaded.");

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace FlashDictionary.Core.Translation.InDictionaries.Normalization;
@@ -25,17 +24,17 @@ internal static class Pronoun
 
       var oldString = word[0] switch
       {
-        'm' => mOldString,
-        'y' => yOldString,
+        'm' => iOldString,
+        'y' => youOldString,
         'h' => word[1] switch
         {
-          'i' => h1OldString,
-          'e' => h2OldString,
+          'i' => heOldString,
+          'e' => sheOldString,
           _ => null,
         },
-        'o' => oOldString,
-        't' => tOldString,
-        'i' => iOldString,
+        'o' => weOldString,
+        't' => theyOldString,
+        'i' => itOldString,
         _ => null,
       };
 
@@ -64,29 +63,29 @@ internal static class Pronoun
     }
   }
 
-  private readonly static IEnumerable<string> mOldString = [
+  private readonly static IEnumerable<string> iOldString = [
     "my", "me", "mine", "myself"
   ];
-  private readonly static IEnumerable<string> yOldString = [
+  private readonly static IEnumerable<string> youOldString = [
     "your", "you", "yours", "yourself"
   ];
-  private readonly static IEnumerable<string> h1OldString = [
+  private readonly static IEnumerable<string> heOldString = [
     "his", "him", "his", "himself",
   ];
-  private readonly static IEnumerable<string> h2OldString = [
+  private readonly static IEnumerable<string> sheOldString = [
     "her", "her", "hers", "herself",
   ];
-  private readonly static IEnumerable<string> oOldString = [
+  private readonly static IEnumerable<string> weOldString = [
     "our", "us", "ours", "ourselves",
   ];
-  private readonly static IEnumerable<string> tOldString = [
+  private readonly static IEnumerable<string> theyOldString = [
     "their", "them", "theirs", "themselves",
   ];
-  private readonly static IEnumerable<string> iOldString = [
+  private readonly static IEnumerable<string> itOldString = [
     "its", "it", "its", "itself",
   ];
 
-  private readonly static ImmutableArray<IEnumerable<string>> newStrings = [
+  private readonly static IEnumerable<string>[] newStrings = [
     ["one's", "someone's"], ["oneself"], ["one's", "someone's", "one's own", "someone's own"], ["oneself"],
   ];
 }

@@ -3,6 +3,7 @@ using FlashDictionary.Util;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -22,6 +23,7 @@ internal enum LoadState
 {
   Succeeded,
   FileNotExists,
+  DataNotWritten,
   PositionsFileNotExists,
   UnknownErrored,
 }
@@ -43,49 +45,13 @@ internal static class LoadDictionaryFile
 
     try
     {
-      SortedDictionary<string, List<Position>>? items = new(new KeyComparer());
-      using (var inputStream = File.OpenRead(filePath))
+      var start = DateTime.Now;
+      SortedDictionary<string, List<Position>>? items = await ReadAddingFile(filePath, format, encoding);
+      Debug.WriteLine($"---{(DateTime.Now - start).TotalMilliseconds} ms---");
+        
+      if (items.Count == 0)
       {
-        using var inputReader = new StreamReader(inputStream, encoding);
-        string? line = await inputReader.ReadLineAsync();
-
-        if (line != null)
-        {
-          var positionAfterReadOnce = inputReader.BaseStream.Position;
-
-          inputReader.BaseStream.Seek(encoding.GetByteCount(line), SeekOrigin.Begin);
-          byte[] buffer = new byte[2];
-          await inputReader.BaseStream.ReadAsync(buffer.AsMemory(0, 2));
-          inputReader.BaseStream.Seek(positionAfterReadOnce, SeekOrigin.Begin);
-
-          long lineBreakLength = 0;
-          if (buffer[0] == CRCharCode && buffer[1] == LFCharCode)
-            lineBreakLength = 2;
-          else if (buffer[0] == CRCharCode || buffer[0] == LFCharCode)
-            lineBreakLength = 1;
-
-          long position = encoding.GetByteCount(line) + lineBreakLength;
-
-          while ((line = await inputReader.ReadLineAsync()) != null)
-          {
-            var parsed = ParseLine(line, format, encoding);
-
-            foreach (var item in parsed)
-            {
-              if (item.HasValue)
-              {
-                if (items.TryGetValue(item.Value.original, out var value) == false)
-                {
-                  value = ([]);
-                  items[item.Value.original] = value;
-                }
-                value.Add(new(item.Value.meaningOffset + position, item.Value.meaningLength));
-              }
-            }
-
-            position += encoding.GetByteCount(line) + lineBreakLength;
-          }
-        }
+        return LoadState.DataNotWritten;
       }
 
       // 新しいファイルを作る分のストレージの空きがあるかを確認
@@ -104,7 +70,7 @@ internal static class LoadDictionaryFile
       // 今あるDictionaryDataの各単語の意味の末尾に読み込んだ意味を挿入する
       if (insertCurrentDictionaryData)
       {
-        SortedList<CharPair, Position?> positions = [];
+        SortedDictionary<TripleChar, Position?> positions = new(new TripleCharComparer());
 
         // 既存のDictionaryDataファイルが存在する
         if (isPreviousStreamPathExists)
@@ -143,16 +109,16 @@ internal static class LoadDictionaryFile
             previousStream.Seek(0, SeekOrigin.Begin);
 
             Span<byte> buffer = stackalloc byte[bufferSize];
-            Span<byte> originalStack = null;
-            bool inDictionaryNameDeclaration = false;
-            string originalTemp = string.Empty;
-            int offsetTemp = 0;
+            var originalStack = Array.Empty<byte>();
+            var inDictionaryNameDeclaration = false;
+            var originalTemp = string.Empty;
+            var offsetTemp = 0;
+            var originalOffset = -1;
             var i = 0;
             while (true)
             {
               var loadedSize = previousStream.Read(buffer);
 
-              int originalOffset = -1;
               for (var j = 0; j < loadedSize; j++)
               {
                 if (inDictionaryNameDeclaration)
@@ -174,19 +140,15 @@ internal static class LoadDictionaryFile
                     originalOffset = j + 1;
                     break;
                   case (byte)Dictionary.DictionaryDataSeparatorBetweenOriginalAndMeaning:
-                    if (originalOffset != -1)
+                    if (originalOffset == -1)
                     {
-                      originalTemp = Encoding.UTF8.GetString(buffer[originalOffset..j]);
-                      originalOffset = -1;
-                    }
-                    else if (originalStack == null)
-                    {
-                      originalTemp = Encoding.UTF8.GetString(buffer[..j]);
+                      originalTemp = Encoding.UTF8.GetString([.. originalStack, .. buffer[..j]]);
+                      originalStack = [];
                     }
                     else
                     {
-                      originalTemp = Encoding.UTF8.GetString([.. originalStack, .. buffer[..j]]);
-                      originalStack = null;
+                      originalTemp = Encoding.UTF8.GetString(buffer[originalOffset..j]);
+                      originalOffset = -1;
                     }
                     offsetTemp = bufferSize * i + j + 1;
                     break;
@@ -195,11 +157,15 @@ internal static class LoadDictionaryFile
 
               if (originalOffset != -1)
               {
-                originalStack = buffer[originalOffset..].ToArray();
+                originalStack = [.. originalStack, .. buffer[originalOffset..]];
+                originalOffset = -1;
               }
 
               if (loadedSize != bufferSize)
+              {
+                result[originalTemp] = new(offsetTemp, bufferSize * i + loadedSize - offsetTemp);
                 break;
+              }
 
               i++;
             }
@@ -218,25 +184,25 @@ internal static class LoadDictionaryFile
               if (previousEnumerator.Current.Key == addedEnumerator.Current.Key)
               {
                 if (insertHead)
-                  yield return (previousEnumerator.Current.Key, [new(0 - previousEnumerator.Current.Value.Offset, previousEnumerator.Current.Value.Length), .. addedEnumerator.Current.Value]);
-                else
                   yield return (previousEnumerator.Current.Key, [.. addedEnumerator.Current.Value, new(0 - previousEnumerator.Current.Value.Offset, previousEnumerator.Current.Value.Length)]);
+                else
+                  yield return (previousEnumerator.Current.Key, [new(0 - previousEnumerator.Current.Value.Offset, previousEnumerator.Current.Value.Length), .. addedEnumerator.Current.Value]);
                 if (previousEnumerator.MoveNext() == false)
                 {
-                  while (addedEnumerator.MoveNext())
+                  do
                   {
                     yield return (addedEnumerator.Current.Key, addedEnumerator.Current.Value);
-                  }
-                  break;
+                  } while (addedEnumerator.MoveNext());
+                  yield break;
                 }
                 if (addedEnumerator.MoveNext() == false)
                 {
                   yield return (previousEnumerator.Current.Key, [new(0 - previousEnumerator.Current.Value.Offset, previousEnumerator.Current.Value.Length)]);
-                  while (previousEnumerator.MoveNext())
+                  do
                   {
                     yield return (previousEnumerator.Current.Key, [new(0 - previousEnumerator.Current.Value.Offset, previousEnumerator.Current.Value.Length)]);
-                  }
-                  break;
+                  } while (previousEnumerator.MoveNext());
+                  yield break;
                 }
               }
               else if (KeyComparer.StaticCompare(previousEnumerator.Current.Key, addedEnumerator.Current.Key) < 0)
@@ -244,11 +210,11 @@ internal static class LoadDictionaryFile
                 yield return (previousEnumerator.Current.Key, [new(0 - previousEnumerator.Current.Value.Offset, previousEnumerator.Current.Value.Length)]);
                 if (previousEnumerator.MoveNext() == false)
                 {
-                  while (addedEnumerator.MoveNext())
+                  do
                   {
                     yield return (addedEnumerator.Current.Key, addedEnumerator.Current.Value);
-                  }
-                  break;
+                  } while (addedEnumerator.MoveNext());
+                  yield break;
                 }
               }
               else
@@ -256,11 +222,11 @@ internal static class LoadDictionaryFile
                 yield return (addedEnumerator.Current.Key, addedEnumerator.Current.Value);
                 if (addedEnumerator.MoveNext() == false)
                 {
-                  while (previousEnumerator.MoveNext())
+                  do
                   {
                     yield return (previousEnumerator.Current.Key, [new(0 - previousEnumerator.Current.Value.Offset, previousEnumerator.Current.Value.Length)]);
-                  }
-                  break;
+                  } while (previousEnumerator.MoveNext());
+                  yield break;
                 }
               }
             }
@@ -298,7 +264,7 @@ internal static class LoadDictionaryFile
 
         WritePositionsFile(positions.Select(x => (x.Key, x.Value)));
 
-        Dictionary.Positions = new(positions.ToDictionary(x => x.Key, y => PositionItemToArray(y.Value)));
+        Dictionary.SetPositions(positions.ToDictionary(x => x.Key, y => PositionItemToArray(y.Value)));
 
         await RenameDictionaryDataCacheFileAsync();
 
@@ -312,7 +278,7 @@ internal static class LoadDictionaryFile
           {
             long currentOffset = 0;
             long offsetTemp = 0;
-            CharPair? previousKey = null;
+            TripleChar? previousKey = null;
 
             var isNeedToEncodingConvert = encoding != Encoding.UTF8;
 
@@ -381,14 +347,24 @@ internal static class LoadDictionaryFile
                   currentOffset++;
                   if (currentKey != previousKey.Value)
                   {
-                    positions.Add(previousKey.Value, new(offsetTemp, currentOffset - offsetTemp));
-                    previousKey = currentKey;
-                    offsetTemp = currentOffsetTemp;
+                    try
+                    {
+                      positions.Add(previousKey.Value, new(offsetTemp, currentOffset - offsetTemp));
+                      previousKey = currentKey;
+                      offsetTemp = currentOffsetTemp;
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
                   }
                 }
                 else
                 {
-                  positions.Add(currentKey, new(offsetTemp, currentOffset - offsetTemp));
+                  if (previousKey.Value != currentKey)
+                    positions.Add(previousKey.Value, new(offsetTemp, currentOffsetTemp - offsetTemp));
+
+                  positions.Add(currentKey, new(currentOffsetTemp, currentOffset - offsetTemp));
                   break;
                 }
               }
@@ -408,7 +384,7 @@ internal static class LoadDictionaryFile
           long addedPositionsOffset = 0;
 
           long offsetOffset = 0;
-          ((CharPair key, long offset)[] offsets, long fileLength)? writeAddedResult = null;
+          ((TripleChar key, long offset)[] offsets, long fileLength)? writeAddedResult = null;
 
           if (insertHead)
           {
@@ -453,12 +429,12 @@ internal static class LoadDictionaryFile
           var positions = MergePositions(writeAddedPositions, previousPositions, addedPositionsOffset, previousPositionsOffset, insertHead).ToArray();
           WritePositionsFile(positions);
 
-          Dictionary.Positions = new(positions.ToDictionary(x => x.key, y => y.positions));
+          Dictionary.SetPositions(positions.ToDictionary(x => x.key, y => y.positions));
         }
         // 既存のDictionaryDataファイルが存在しない
         else
         {
-          ((CharPair key, long offset)[] offsets, long fileLength) writeAddedResult;
+          ((TripleChar key, long offset)[] offsets, long fileLength) writeAddedResult;
           using (var newStream = File.OpenWrite(newStreamPath))
           {
             writeAddedResult = await WriteAddedAsync(newStream);
@@ -468,7 +444,7 @@ internal static class LoadDictionaryFile
           var included = IncludeAllKeys(writeAddedPositions).ToArray();
           WritePositionsFile(included);
 
-          Dictionary.Positions = new(included.ToDictionary(x => x.key, y => PositionItemToArray(y.position)));
+          Dictionary.SetPositions(included.ToDictionary(x => x.key, y => PositionItemToArray(y.position)));
         }
 
         await RenameDictionaryDataCacheFileAsync();
@@ -477,7 +453,7 @@ internal static class LoadDictionaryFile
         GC.Collect(2, GCCollectionMode.Aggressive, true);
         return LoadState.Succeeded;
 
-        async Task<((CharPair key, long offset)[] offsets, long fileLength)> WriteAddedAsync(FileStream newStream)
+        async Task<((TripleChar key, long offset)[] offsets, long fileLength)> WriteAddedAsync(FileStream newStream)
         {
           var dictionaryNameBytes = Encoding.UTF8.GetBytes(""); // 任意の辞書の名前
 
@@ -485,7 +461,7 @@ internal static class LoadDictionaryFile
           await newStream.WriteAsync(dictionaryNameBytes);
           newStream.WriteByte((byte)Dictionary.DictionaryDataDictionaryNameDeclaration);
 
-          var positions = new (CharPair key, long offset)[items.Count];
+          var positions = new (TripleChar key, long offset)[items.Count];
           long offsetTemp = 2 + dictionaryNameBytes.Length;
 
           var isNeedToEncodingConvert = encoding != Encoding.UTF8;
@@ -539,10 +515,10 @@ internal static class LoadDictionaryFile
           }
           throw new Exception("items.Count must be greater than 1.");
         }
-        IEnumerable<(CharPair key, Position? position)> OrganizeWriteAddedAsyncRetuned(((CharPair key, long offset)[] offsets, long fileLegnth) returned)
+        IEnumerable<(TripleChar key, Position? position)> OrganizeWriteAddedAsyncRetuned(((TripleChar key, long offset)[] offsets, long fileLegnth) returned)
         {
-          List<(CharPair key, Position position)> result = [];
-          var items = returned.offsets.GroupBy(x => x.key).OrderBy(x => x.Key).Select(x => (key: x.Key, offset: x.Min(y => y.offset))).ToArray();
+          List<(TripleChar key, Position position)> result = [];
+          var items = returned.offsets.GroupBy(x => x.key, new TripleCharEqualityComparer()).OrderBy(x => x.Key, new TripleCharComparer()).Select(x => (key: x.Key, offset: x.Min(y => y.offset))).ToArray();
 
           for (var i = 0; i < items.Length - 1; i++)
           {
@@ -550,7 +526,7 @@ internal static class LoadDictionaryFile
           }
           yield return (items[^1].key, new(items[^1].offset, returned.fileLegnth - items[^1].offset));
         }
-        IEnumerable<(CharPair key, Position? position)> IncludeAllKeys(IEnumerable<(CharPair key, Position? position)> data)
+        IEnumerable<(TripleChar key, Position? position)> IncludeAllKeys(IEnumerable<(TripleChar key, Position? position)> data)
         {
           var enumerator = data.GetEnumerator();
           enumerator.MoveNext();
@@ -569,7 +545,7 @@ internal static class LoadDictionaryFile
         }
       }
     }
-    catch
+    catch (Exception e)
     {
       return LoadState.UnknownErrored;
     }
@@ -586,6 +562,59 @@ internal static class LoadDictionaryFile
   private static string? prefix = null;
   private static string? suffix = null;
   private readonly static char[] leftBrackets = ['<', '[', '{', '＜', '［', '｛', '｟', '｢', '〈', '《', '「', '『', '【', '〔', '〖', '〘', '〚', '⟦', '⟨', '⟪', '⟬', '⟮', '⦃', '⦅', '⦇', '⦉', '⦋', '⦍', '⦏', '⦑', '⦗', '⧼', '❨', '❪', '❬', '❮', '❰', '❲', '❴', '⁽', '₍'];
+
+  private async static Task<SortedDictionary<string, List<Position>>> ReadAddingFile(string filePath, DictionaryDataFormat format, Encoding encoding)
+  {
+    SortedDictionary<string, List<Position>> items = new(new KeyComparer());
+    using (var inputStream = File.OpenRead(filePath))
+    {
+      using var inputReader = new StreamReader(inputStream, encoding);
+      string? line = await inputReader.ReadLineAsync();
+
+      if (line != null)
+      {
+        long lineBreakLength = 0;
+        var positionAfterReadOnce = inputReader.BaseStream.Position;
+
+        var firstLineByteCount = encoding.GetByteCount(line);
+        if (inputReader.BaseStream.Length > firstLineByteCount)
+        {
+          inputReader.BaseStream.Seek(firstLineByteCount, SeekOrigin.Begin);
+          byte[] buffer = new byte[2];
+          await inputReader.BaseStream.ReadAsync(buffer.AsMemory(0, 2));
+          inputReader.BaseStream.Seek(positionAfterReadOnce, SeekOrigin.Begin);
+
+          if (buffer[0] == CRCharCode && buffer[1] == LFCharCode)
+            lineBreakLength = 2;
+          else if (buffer[0] == CRCharCode || buffer[0] == LFCharCode)
+            lineBreakLength = 1;
+        }
+
+        long position = 0;
+        do
+        {
+          var parsed = ParseLine(line, format, encoding);
+
+          foreach (var item in parsed)
+          {
+            if (item.HasValue)
+            {
+              if (items.TryGetValue(item.Value.original, out var value) == false)
+              {
+                value = ([]);
+                items[item.Value.original] = value;
+              }
+              value.Add(new(item.Value.meaningOffset + position, item.Value.meaningLength));
+            }
+          }
+
+          position += encoding.GetByteCount(line) + lineBreakLength;
+        } while ((line = await inputReader.ReadLineAsync()) != null);
+      }
+    }
+
+    return items;
+  }
 
   private static IEnumerable<(string original, long meaningOffset, long meaningLength)?> ParseLine(string line, DictionaryDataFormat format, Encoding encoding)
   {
@@ -635,7 +664,7 @@ internal static class LoadDictionaryFile
     }
   }
 
-  private static async Task<SortedList<CharPair, Position[]>> ReadPreviousPositionsFileAsync()
+  private static async Task<SortedDictionary<TripleChar, Position[]>> ReadPreviousPositionsFileAsync()
   {
     string fileContent;
     using (var stream = File.OpenRead(Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, Dictionary.DictionaryPositionsFileName)))
@@ -645,7 +674,7 @@ internal static class LoadDictionaryFile
       fileContent = await reader.ReadToEndAsync();
     }
 
-    SortedList<CharPair, Position[]> result = [];
+    SortedDictionary<TripleChar, Position[]> result = new(new TripleCharComparer());
 
     foreach (var keyGroup in fileContent.Trim().Split(Dictionary.DictionaryPositionsSeparatorBetweenKey))
     {
@@ -655,7 +684,7 @@ internal static class LoadDictionaryFile
       ProcessItem(keyGroup, result);
     }
 
-    static void ProcessItem(string keyGroup, SortedList<CharPair, Position[]> result)
+    static void ProcessItem(string keyGroup, SortedDictionary<TripleChar, Position[]> result)
     {
       var success = Split.TrySplitIntoTwo(keyGroup, Dictionary.DictionaryPositionsSeparatorBetweenKeyAndOther, out ReadOnlySpan<char> first, out string second);
 
@@ -685,7 +714,7 @@ internal static class LoadDictionaryFile
     return result;
   }
 
-  private static IEnumerable<(CharPair key, Position[]? positions)> MergePositions(IEnumerable<(CharPair key, Position? position)> organizedAddedPositions, SortedList<CharPair, Position[]> previousPositions, long addedPositionsOffset, long previousPositionsOffset, bool insertHead)
+  private static IEnumerable<(TripleChar key, Position[]? positions)> MergePositions(IEnumerable<(TripleChar key, Position? position)> organizedAddedPositions, SortedDictionary<TripleChar, Position[]> previousPositions, long addedPositionsOffset, long previousPositionsOffset, bool insertHead)
   {
     var addedEnumerator = organizedAddedPositions.GetEnumerator();
     var doNext = false;
@@ -731,7 +760,7 @@ internal static class LoadDictionaryFile
     }
   }
 
-  private static void WritePositionsFile((CharPair key, Position[]? positions)[] positionsList)
+  private static void WritePositionsFile((TripleChar key, Position[]? positions)[] positionsList)
   {
     using var positionsFile = File.Create(Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, Dictionary.DictionaryPositionsFileName));
     using var writer = new StreamWriter(positionsFile, Encoding.UTF8);
@@ -763,7 +792,7 @@ internal static class LoadDictionaryFile
         break;
     }
   }
-  private static void WritePositionsFile(IEnumerable<(CharPair key, Position? positions)> positionsList)
+  private static void WritePositionsFile(IEnumerable<(TripleChar key, Position? positions)> positionsList)
   {
     using var positionsFile = File.Create(Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, Dictionary.DictionaryPositionsFileName));
     using var writer = new StreamWriter(positionsFile, Encoding.UTF8);
@@ -807,16 +836,22 @@ internal static class LoadDictionaryFile
     await cacheFile.RenameAsync(Dictionary.DictionaryDataFileName, NameCollisionOption.ReplaceExisting);
   }
 
-  public static IEnumerable<CharPair> EnumerateCharPairs()
+  public static IEnumerable<TripleChar> EnumerateCharPairs()
   {
     yield return new('#');
     for (char i = 'a'; i <= 'z'; i++)
     {
-      yield return new CharPair(i);
-      yield return new CharPair(i, '#');
+      yield return new TripleChar(i);
+      yield return new TripleChar(i, '#');
+
       for (char j = 'a'; j <= 'z'; j++)
       {
-        yield return new CharPair(i, j);
+        yield return new TripleChar(i, j);
+        yield return new TripleChar(i, j, '#');
+        for (char k = 'a'; k <= 'z'; k++)
+        {
+          yield return new TripleChar(i, j, k);
+        }
       }
     }
   }

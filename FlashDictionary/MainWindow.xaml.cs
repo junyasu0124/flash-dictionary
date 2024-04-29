@@ -4,8 +4,9 @@ using FlashDictionary.Core.Translation.InDictionaries.Normalization;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System;
-using System.Text;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
@@ -39,19 +40,15 @@ public sealed partial class MainWindow : Window
 
     //{
     //  var loadDictionaryFileStart = DateTime.Now;
-    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\ejdict\ejdict-hand-utf8.txt""", DictionaryDataFormat.TabSeparated, Encoding.UTF8, true, true);
+    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\ejdict\ejdict-hand-utf8.txt""", DictionaryDataFormat.TabSeparated, System.TextEncoding.UTF8, true, true);
     //  Result_Header.Text = $"LoadDictionaryFile: {(DateTime.Now - loadDictionaryFileStart).TotalMilliseconds} ms, {Enum.GetName(typeof(LoadState), loadResult)}";
     //}
 
     //{
     //  var loadDictionaryFileStart = DateTime.Now;
-    //  Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\EIJIRO144-10\EIJIRO144-10.txt""", DictionaryDataFormat.Eijiro, Encoding.GetEncoding("shift_jis"), true, true);
+    //  System.TextEncoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\EIJIRO144-10\EIJIRO144-10.txt""", DictionaryDataFormat.Eijiro, System.TextEncoding.GetEncoding("shift_jis"), true, true);
     //  Result_Header.Text = $"LoadDictionaryFile: {(DateTime.Now - loadDictionaryFileStart).TotalMilliseconds} ms, {Enum.GetName(typeof(LoadState), loadResult)}";
-    //  if (loadResult == LoadState.UnknownErrored)
-    //  {
-    //    Result_Header.Text += LoadDictionaryFile.exception.Message;
-    //  }
     //}
 
     {
@@ -59,6 +56,7 @@ public sealed partial class MainWindow : Window
       await LoadPositions.LoadAsync();
       Result_Header.Text = $"LoadPositions: {(DateTime.Now - loadPositionsStart).TotalMilliseconds} ms";
     }
+
     await Base.LoadData();
   }
 
@@ -66,15 +64,22 @@ public sealed partial class MainWindow : Window
 #pragma warning disable CS0649
   private readonly CancellationTokenSource? translationDebounceTokenSource;
 #pragma warning restore CS0649
-  private void Input_Box_TextChanged(object sender, TextChangedEventArgs e)
+  private void Input_Box_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
   {
-    Debounce(Translate, translationDebounceMilliseconds, translationDebounceTokenSource);
+    if (args.Reason != AutoSuggestionBoxTextChangeReason.SuggestionChosen)
+    {
+      sender.ItemsSource = null;
+      Debounce(Translate, translationDebounceMilliseconds, translationDebounceTokenSource);
+    }
   }
-  private void Input_Confirm_Click(object sender, RoutedEventArgs e)
+  private void Input_Box_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
   {
+    sender.ItemsSource = null;
     Debounce(Translate, translationDebounceMilliseconds, translationDebounceTokenSource);
   }
 
+  private string? previousSuggestionsText = null;
+  private List<string>? previousSuggestions = null;
   private CancellationTokenSource? translatedByGoogleTokenSource;
   private void Translate()
   {
@@ -84,10 +89,17 @@ public sealed partial class MainWindow : Window
       if (!string.IsNullOrWhiteSpace(text))
       {
         var start = DateTime.Now;
-        var inDictionaries = TranslateInDictionaries.Translate(text, out var searchedWordCount);
+        var inDictionaries = TranslateInDictionaries.Translate(text, out var searchedWordCount, out var suggestions);
+
         Result_Header.Text = $"InDictionaries: {(DateTime.Now - start).TotalMilliseconds} ms, {searchedWordCount}";
+
         if (inDictionaries is not null)
         {
+          if (inDictionaries.Items.Count == 0)
+            Input_Box.ItemsSource = suggestions;
+          previousSuggestionsText = text;
+          previousSuggestions = suggestions;
+
           Result_InDictionaries.ItemsSource = inDictionaries.Items;
         }
 
@@ -122,6 +134,37 @@ public sealed partial class MainWindow : Window
           action();
         }
       }, TaskScheduler.Default);
+    }
+  }
+
+  bool isCtrlDowned = false;
+  private void Input_Box_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+  {
+    if (e.Key == VirtualKey.Space)
+    {
+      if (isCtrlDowned)
+      {
+        e.Handled = true;
+        if (previousSuggestions != null && previousSuggestionsText == Input_Box.Text && Input_Box.IsSuggestionListOpen == false)
+        {
+          Input_Box.ItemsSource = previousSuggestions;
+          Input_Box.IsSuggestionListOpen = true;
+        }
+      }
+    }
+  }
+  private void Input_Box_KeyDown(object sender, KeyRoutedEventArgs e)
+  {
+    if (e.Key == VirtualKey.Control)
+    {
+      isCtrlDowned = true;
+    }
+  }
+  private void Input_Box_KeyUp(object sender, KeyRoutedEventArgs e)
+  {
+    if (e.Key == VirtualKey.Control)
+    {
+      isCtrlDowned = false;
     }
   }
 }

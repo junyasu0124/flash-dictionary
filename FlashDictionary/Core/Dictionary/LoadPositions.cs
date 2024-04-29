@@ -1,6 +1,7 @@
 ﻿using FlashDictionary.Core.Translation.InDictionaries;
 using FlashDictionary.Util;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -18,7 +19,7 @@ internal static class LoadPositions
     var file = await ApplicationData.Current.LocalCacheFolder.GetFileAsync(DictionaryPositionsFileName);
     var data = await FileIO.ReadTextAsync(file);
 
-    Positions = [];
+    SetPositions(new SortedDictionary<TripleChar, Position[]?>());
     var splitedBetweenKey = data.Split(DictionaryPositionsSeparatorBetweenKey);
     foreach (var item in splitedBetweenKey)
     {
@@ -50,7 +51,9 @@ internal static class LoadPositions
             return new Position(long.Parse(first), long.Parse(second));
           }).ToArray();
         }
-        catch { }
+        catch (Exception e)
+        {
+        }
       }
     }
   }

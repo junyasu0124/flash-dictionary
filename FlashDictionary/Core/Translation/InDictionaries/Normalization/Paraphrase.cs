@@ -19,6 +19,7 @@ internal static partial class Paraphrase
     {
       yield break;
     }
+
     foreach (var (word, function) in regexes)
     {
       var newSentence = function.Replace(sentence, $"$1 a {word} b");
@@ -57,7 +58,7 @@ internal static partial class Paraphrase
 
   // ["about", "above", "across", "after", "against", "ahead", "along", "amid", "among", "apart", "around", "aside", "at", "away", "back", "before", "behind", "below", "beside", "between", "beyond", "by", "down", "downward", "during", "except", "for", "forward", "from", "in", "inside", "into", "like", "near", "of", "off", "on", "onto", "out", "outside", "over", "over to", "past", "round", "thought", "through", "throughout", "to", "together", "toward", "towards", "under", "underneath", "until", "up", "upon", "via", "with", "within", "without"];
 
-  private static readonly IEnumerable<(string word, Regex function)> regexes = [
+  private static readonly (string word, Regex function)[] regexes = [
     ("about", adverbialsAbout()),
     ("above", adverbialsAbove()),
     ("across", adverbialsAcross()),

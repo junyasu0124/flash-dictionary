@@ -42,16 +42,15 @@ internal static class Separator
     var upperCaseCount = noSeparatorsOriginalWord.Count(char.IsUpper);
     Span<char> chars = stackalloc char[noSeparatorsOriginalWord.Length + upperCaseCount - (char.IsUpper(noSeparatorsOriginalWord[0]) ? 1 : 0)];
 
-    if (upperCaseCount > 1)
+    if (upperCaseCount > 0)
     {
       for (int i = 0, j = 0; i < chars.Length; i++, j++)
       {
         if (i == 0)
         {
           chars[0] = char.ToLower(noSeparatorsOriginalWord[0]);
-          continue;
         }
-        if (char.IsUpper(noSeparatorsOriginalWord[j]))
+        else if (char.IsUpper(noSeparatorsOriginalWord[j]))
         {
           chars[i] = ' ';
           chars[i + 1] = char.ToLower(noSeparatorsOriginalWord[j]);

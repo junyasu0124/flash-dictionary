@@ -29,7 +29,7 @@ internal static class Base
     nouns = JsonSerializer.Deserialize<SortedList<string, string>>((await FileIO.ReadTextAsync(nounsFile)).Trim());
 
     verbs = JsonSerializer.Deserialize<SortedList<string, string>>((await FileIO.ReadTextAsync(verbsFile)).Trim());
-
+    
     isDataLoaded = true;
   }
 
@@ -54,14 +54,6 @@ internal static class Base
       yield return verb;
     }
 
-    foreach (var normalized in Regular(word))
-    {
-      yield return normalized;
-    }
-  }
-
-  private static IEnumerable<string> Regular(string word)
-  {
     var newIterator = newString.GetEnumerator();
     foreach (var old in oldString)
     {

@@ -11,61 +11,61 @@
 
    <StackPanel Loaded="Parent_Panel_Loaded" x:Name="Parent_Panel" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
       <RelativePanel x:Name="Input_Panel">
-         <TextBox x:Name="Input_Box" TextChanged="Input_Box_TextChanged" RelativePanel.AlignTopWithPanel="True" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.LeftOf="Input_Confirm"/>
-         <Button x:Name="Input_Confirm" Click="Input_Confirm_Click" RelativePanel.AlignTopWithPanel="True" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignRightWithPanel="True" Style="{ThemeResource DefaultButtonStyle}">
-            <SymbolIcon Symbol="Forward"/>
-         </Button>
+         <AutoSuggestBox x:Name="Input_Box" TextChanged="Input_Box_TextChanged" QuerySubmitted="Input_Box_QuerySubmitted" PreviewKeyDown="Input_Box_PreviewKeyDown" KeyDown="Input_Box_KeyDown" KeyUp="Input_Box_KeyUp" AutoMaximizeSuggestionArea="False" QueryIcon="Find" RelativePanel.AlignTopWithPanel="True" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True">
+            <AutoSuggestBox.Style>
+               <Style TargetType="AutoSuggestBox">
+                  <Setter Property="VerticalAlignment" Value="Stretch"/>
+                  <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                  <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                  <Setter Property="IsTabStop" Value="False"/>
+                  <Setter Property="Foreground" Value="{ThemeResource TextControlForeground}"/>
+                  <Setter Property="Background" Value="{ThemeResource TextControlBackground}"/>
+                  <Setter Property="BorderBrush" Value="{ThemeResource TextControlBorderBrush}"/>
+                  <Setter Property="BorderThickness" Value="{ThemeResource TextControlBorderThemeThickness}"/>
+                  <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}"/>
+                  <Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}"/>
+                  <Setter Property="TextBoxStyle" Value="{StaticResource AutoSuggestBoxTextBoxStyle}"/>
+                  <Setter Property="UseSystemFocusVisuals" Value="{ThemeResource IsApplicationFocusVisualKindReveal}"/>
+                  <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}"/>
+                  <Setter Property="Template">
+                     <Setter.Value>
+                        <ControlTemplate TargetType="AutoSuggestBox">
+                           <Grid x:Name="LayoutRoot">
+                              <VisualStateManager.VisualStateGroups>
+                                 <VisualStateGroup x:Name="Orientation">
+                                    <VisualState x:Name="Landscape"/>
+                                    <VisualState x:Name="Portrait"/>
+                                 </VisualStateGroup>
+                              </VisualStateManager.VisualStateGroups>
+                              <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
+                              </Grid.ColumnDefinitions>
+                              <Grid.RowDefinitions>
+                                 <RowDefinition Height="*"/>
+                              </Grid.RowDefinitions>
+                              <TextBox x:Name="TextBox" Style="{TemplateBinding TextBoxStyle}" PlaceholderText="{TemplateBinding PlaceholderText}" Header="{TemplateBinding Header}" Width="{TemplateBinding Width}" Description="{TemplateBinding Description}" Foreground="{TemplateBinding Foreground}" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" FontSize="{TemplateBinding FontSize}" FontFamily="{TemplateBinding FontFamily}" FontWeight="{TemplateBinding FontWeight}" FontStretch="{TemplateBinding FontStretch}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" ScrollViewer.BringIntoViewOnFocusChange="False" Canvas.ZIndex="0" Margin="0" DesiredCandidateWindowAlignment="BottomEdge" UseSystemFocusVisuals="{TemplateBinding UseSystemFocusVisuals}" CornerRadius="{TemplateBinding CornerRadius}"/>
+                              <Popup x:Name="SuggestionsPopup" ShouldConstrainToRootBounds="False">
+                                 <Border x:Name="SuggestionsContainer" Padding="{ThemeResource AutoSuggestListMargin}" BorderThickness="{ThemeResource AutoSuggestListBorderThemeThickness}" BorderBrush="{ThemeResource AutoSuggestBoxSuggestionsListBorderBrush}" Background="{ThemeResource AutoSuggestBoxSuggestionsListBackground}" CornerRadius="{ThemeResource OverlayCornerRadius}">
+                                    <ListView x:Name="SuggestionsList" DisplayMemberPath="{TemplateBinding DisplayMemberPath}" IsItemClickEnabled="True" ItemTemplate="{TemplateBinding ItemTemplate}" ItemTemplateSelector="{TemplateBinding ItemTemplateSelector}" ItemContainerStyle="{TemplateBinding ItemContainerStyle}" MaxHeight="{ThemeResource AutoSuggestListMaxHeight}" Margin="{ThemeResource AutoSuggestListPadding}" Style="{ThemeResource NoTransitionListViewStyle}"/>
+                                 </Border>
+                              </Popup>
+                           </Grid>
+                        </ControlTemplate>
+                     </Setter.Value>
+                  </Setter>
+               </Style>
+            </AutoSuggestBox.Style>
+         </AutoSuggestBox>
       </RelativePanel>
       <StackPanel x:Name="Result_Panel" Orientation="Vertical" ScrollViewer.VerticalScrollMode="Auto">
          <TextBlock x:Name="Result_Header"/>
 
-         <ListView x:Name="Result_InDictionaries" SelectionMode="None" ScrollViewer.VerticalScrollMode="Enabled">
+         <ListView x:Name="Result_InDictionaries" SelectionMode="None" Style="{ThemeResource NoTransitionListViewStyle}" ScrollViewer.VerticalScrollMode="Enabled">
             <ListView.ItemTemplate>
                <DataTemplate x:DataType="translation:Result">
                   <ContentPresenter Content="{x:Bind GenerateTextBlock()}" FontSize="16" Margin="0,0,0,8"/>
                </DataTemplate>
             </ListView.ItemTemplate>
-            <ListView.Style>
-               <Style TargetType="ListView">
-                  <Setter Property="IsTabStop" Value="False"/>
-                  <Setter Property="TabNavigation" Value="Once"/>
-                  <Setter Property="IsSwipeEnabled" Value="True"/>
-                  <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-                  <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
-                  <Setter Property="ScrollViewer.HorizontalScrollMode" Value="Disabled"/>
-                  <Setter Property="ScrollViewer.IsHorizontalRailEnabled" Value="False"/>
-                  <Setter Property="ScrollViewer.VerticalScrollMode" Value="Enabled"/>
-                  <Setter Property="ScrollViewer.IsVerticalRailEnabled" Value="True"/>
-                  <Setter Property="ScrollViewer.ZoomMode" Value="Disabled"/>
-                  <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="False"/>
-                  <Setter Property="ScrollViewer.BringIntoViewOnFocusChange" Value="True"/>
-                  <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}"/>
-                  <Setter Property="ItemContainerTransitions">
-                     <Setter.Value>
-                        <TransitionCollection>
-                        </TransitionCollection>
-                     </Setter.Value>
-                  </Setter>
-                  <Setter Property="ItemsPanel">
-                     <Setter.Value>
-                        <ItemsPanelTemplate>
-                           <ItemsStackPanel Orientation="Vertical"/>
-                        </ItemsPanelTemplate>
-                     </Setter.Value>
-                  </Setter>
-                  <Setter Property="Template">
-                     <Setter.Value>
-                        <ControlTemplate TargetType="ListView">
-                           <Border BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
-                              <ScrollViewer x:Name="ScrollViewer" TabNavigation="{TemplateBinding TabNavigation}" HorizontalScrollMode="{TemplateBinding ScrollViewer.HorizontalScrollMode}" HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}" IsHorizontalScrollChainingEnabled="{TemplateBinding ScrollViewer.IsHorizontalScrollChainingEnabled}" VerticalScrollMode="{TemplateBinding ScrollViewer.VerticalScrollMode}" VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}" IsVerticalScrollChainingEnabled="{TemplateBinding ScrollViewer.IsVerticalScrollChainingEnabled}" IsHorizontalRailEnabled="{TemplateBinding ScrollViewer.IsHorizontalRailEnabled}" IsVerticalRailEnabled="{TemplateBinding ScrollViewer.IsVerticalRailEnabled}" ZoomMode="{TemplateBinding ScrollViewer.ZoomMode}" IsDeferredScrollingEnabled="{TemplateBinding ScrollViewer.IsDeferredScrollingEnabled}" BringIntoViewOnFocusChange="{TemplateBinding ScrollViewer.BringIntoViewOnFocusChange}" AutomationProperties.AccessibilityView="Raw">
-                                 <ItemsPresenter Header="{TemplateBinding Header}" HeaderTemplate="{TemplateBinding HeaderTemplate}" HeaderTransitions="{TemplateBinding HeaderTransitions}" Footer="{TemplateBinding Footer}" FooterTemplate="{TemplateBinding FooterTemplate}" FooterTransitions="{TemplateBinding FooterTransitions}" Padding="0"/>
-                              </ScrollViewer>
-                           </Border>
-                        </ControlTemplate>
-                     </Setter.Value>
-                  </Setter>
-               </Style>
-            </ListView.Style>
          </ListView>
          
          <TextBlock x:Name="Result_ByGoogle" TextWrapping="WrapWholeWords" IsTextSelectionEnabled="True"/>
