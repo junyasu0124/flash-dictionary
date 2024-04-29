@@ -63,20 +63,6 @@ public sealed partial class MainWindow : Window
     await Base.LoadData();
 
     Input_Box.Focus(FocusState.Programmatic);
-
-    var suggestionsListView = Input_Box.DescendantsFirstOrDefault<ListView>();
-    if (suggestionsListView is not null)
-    {
-      Debug.WriteLine("SuggestionsListView is not null!");
-      suggestionsListView.ItemClick += (_, _) => Debug.WriteLine("SuggestionsListViewItemClicked!");
-    }
-
-    while (true)
-    {
-      await Task.Delay(5000);
-      var list = Input_Box.DescendantsFirstOrDefault<ListView>();
-      var popup = Input_Box.DescendantsFirstOrDefault<Popup>();
-    }
   }
 
   private readonly int translationDebounceMilliseconds = 500;
