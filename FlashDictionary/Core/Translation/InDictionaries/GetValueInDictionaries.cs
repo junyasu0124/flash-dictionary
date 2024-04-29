@@ -35,7 +35,7 @@ file static class GetValueInDictionariesCache
     fileStreamTimer = null;
   }
 
-  private readonly static FixedDictionary<TripleChar, Dictionary<string, List<(string Original, string[] Meaning)>>> valuesCache = new(20);
+  private static FixedDictionary<TripleChar, Dictionary<string, List<(string Original, string[] Meaning)>>> valuesCache = new(20);
   public static bool TryGetCachedValue(TripleChar key, out Dictionary<string, List<(string Original, string[] Meaning)>>? value)
   {
     return valuesCache.TryGetValue(key, out value);
@@ -56,15 +56,28 @@ file static class GetValueInDictionariesCache
     }
   }
 
-  private static Timer? valuesCacheTimer = null;
+  private static Timer? valuesCacheTimerLong = null;
+  private static Timer? valuesCacheTimerShort = null;
   private static void SetValuesCacheTimer()
   {
-    valuesCacheTimer?.Dispose();
-    valuesCacheTimer = new(60 * 1000) { AutoReset = false }; // 60s
-    valuesCacheTimer.Elapsed += (_, _) =>
+    valuesCacheTimerShort?.Dispose();
+    valuesCacheTimerShort = new(30 * 1000) { Enabled = true, AutoReset = false }; // 30s
+    valuesCacheTimerShort.Elapsed += (_, _) =>
     {
-      valuesCache.Clear();
-      GC.Collect(2);
+      for (var i = 0; i < valuesCache.Capacity >> 1; i++)
+        valuesCache.RemoveOldest();
+      GC.Collect(2, GCCollectionMode.Aggressive, true);
+    };
+
+    valuesCacheTimerLong?.Dispose();
+    valuesCacheTimerLong = new(60 * 1000) { Enabled = true, AutoReset = false }; // 60s
+    valuesCacheTimerLong.Elapsed += (_, _) =>
+    {
+#pragma warning disable CS8625
+      valuesCache = null;
+      valuesCache = new(20);
+      GC.Collect(2, GCCollectionMode.Aggressive, true);
+#pragma warning restore CS8625
     };
   }
 
@@ -86,7 +99,7 @@ file static class GetValueInDictionariesCache
   private static void SetFileStreamTimer()
   {
     fileStreamTimer?.Dispose();
-    fileStreamTimer = new(20 * 1000) { AutoReset = false }; // 20s
+    fileStreamTimer = new(20 * 1000) { Enabled = true, AutoReset = false }; // 20s
     fileStreamTimer.Elapsed += (_, _) =>
     {
       DisposeFileStream();
