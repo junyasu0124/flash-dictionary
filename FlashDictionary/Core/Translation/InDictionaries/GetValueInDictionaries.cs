@@ -20,7 +20,7 @@ file static class GetValueInDictionariesCache
     {
       DisposeFileStream();
     };
-    App.Window!.Activated += (sender, e) =>
+    App.Window!.Activated += (_, e) =>
     {
       if (e.WindowActivationState == WindowActivationState.Deactivated)
         DisposeFileStream();
@@ -133,7 +133,7 @@ internal static class GetValueInDictionaries
         {
           try
           {
-            var loweredKey = first.ToLower();
+            var loweredKey = first.ToLowerInvariant();
             if (result.TryGetValue(loweredKey, out var value) == false)
             {
               value = ([]);
@@ -231,7 +231,10 @@ internal static class GetValueInDictionaries
     {
       GetValueInDictionariesCache.FileStream.Seek(position.Offset, SeekOrigin.Begin);
       var buffer = new byte[position.Length];
-      GetValueInDictionariesCache.FileStream.Read(buffer);
+      var readByteLength = GetValueInDictionariesCache.FileStream.Read(buffer);
+
+      if (readByteLength != position.Length)
+        return null;
 
       return Encoding.UTF8.GetString(buffer);
     }

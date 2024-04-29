@@ -397,8 +397,8 @@ internal static class LoadDictionaryFile
             }
 
             byte[] buffer = new byte[1];
-            await previousStream.ReadAsync(buffer.AsMemory(0, 1));
-            if (Convert.ToChar(buffer[0]) != Dictionary.DictionaryDataDictionaryNameDeclaration)
+            var readByteLenght = await previousStream.ReadAsync(buffer.AsMemory(0, 1));
+            if (readByteLenght == 1 && Convert.ToChar(buffer[0]) != Dictionary.DictionaryDataDictionaryNameDeclaration)
             {
               var dictionaryNameBytes = Encoding.UTF8.GetBytes(""); // 適当な辞書の名前
 
@@ -644,7 +644,7 @@ internal static class LoadDictionaryFile
         targetString = line[(bracketIndex + prefix.Length)..^suffix.Length].Trim();
       }
 
-      var targetIndex = line.IndexOf(targetString);
+      var targetIndex = line.IndexOf(targetString, StringComparison.Ordinal);
       if (targetIndex != -1)
       {
         long meaningOffset = encoding.GetByteCount(line[..targetIndex]);

@@ -61,9 +61,9 @@ public sealed partial class MainWindow : Window
   }
 
   private readonly int translationDebounceMilliseconds = 500;
-#pragma warning disable CS0649
-  private readonly CancellationTokenSource? translationDebounceTokenSource;
-#pragma warning restore CS0649
+#pragma warning disable CS0649, IDE0044
+  private CancellationTokenSource? translationDebounceTokenSource;
+#pragma warning restore CS0649, IDE0044
   private void Input_Box_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
   {
     if (args.Reason != AutoSuggestionBoxTextChangeReason.SuggestionChosen)

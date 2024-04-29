@@ -16,7 +16,7 @@ internal static class TranslateInDictionaries
     {
       sentence = sentence.Trim().Replace("\r", "").Replace("\n", "").Replace("\t", "").Replace("  ", " ");
 
-      var sentencePreprocessed = sentence.ToLower().RepeatNormalization().Select(x => x.SeparatorNormalization(sentence)).SelectMany(x => x).ToArray();
+      var sentencePreprocessed = sentence.ToLowerInvariant().RepeatNormalization().Select(x => x.SeparatorNormalization(sentence)).SelectMany(x => x).ToArray();
 
       var sentenceVariations = ((IEnumerable<string>)[
         .. sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x),

@@ -34,7 +34,7 @@ internal class Result((string Word, string[] Meanings) item)
 
   public RichTextBlock GenerateTextBlock()
   {
-    var textBlock = new RichTextBlock()
+    var textBlock = new RichTextBlock
     {
       Blocks =
       {
@@ -50,11 +50,11 @@ internal class Result((string Word, string[] Meanings) item)
   }
   private Paragraph GenerateWordParagraph()
   {
-    return new Paragraph()
+    return new Paragraph
     {
       Inlines =
       {
-        new Run()
+        new Run
         {
           Text = Word,
         },
@@ -103,7 +103,7 @@ internal class Result((string Word, string[] Meanings) item)
         }
       }
 
-      var paragraph = new Paragraph() { };
+      var paragraph = new Paragraph();
 
       int previousEnd = 0;
       for (var i = 0; i < bracketPairs.Count; i++)
@@ -111,12 +111,12 @@ internal class Result((string Word, string[] Meanings) item)
         var range = bracketPairs[i];
         if (previousEnd != range.Start.Value)
         {
-          paragraph.Inlines.Add(new Run()
+          paragraph.Inlines.Add(new Run
           {
             Text = meaning[previousEnd..range.Start.Value],
           });
         }
-        paragraph.Inlines.Add(new Run()
+        paragraph.Inlines.Add(new Run
         {
           Text = meaning[range.Start.Value..(range.End.Value + 1)],
           Foreground = foregroundInBracket,
@@ -125,7 +125,7 @@ internal class Result((string Word, string[] Meanings) item)
       }
       if (previousEnd != meaning.Length)
       {
-        paragraph.Inlines.Add(new Run()
+        paragraph.Inlines.Add(new Run
         {
           Text = meaning[previousEnd..],
         });

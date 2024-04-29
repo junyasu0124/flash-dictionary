@@ -18,8 +18,8 @@ internal class KeyComparer : IComparer<string>
       return 1;
     }
 
-    var loweredX = x.ToLower();
-    var loweredY = y.ToLower();
+    var loweredX = x.ToLowerInvariant();
+    var loweredY = y.ToLowerInvariant();
 
     for (int i = 0; i < Math.Min(x.Length, y.Length); i++)
     {
@@ -44,7 +44,7 @@ internal class KeyComparer : IComparer<string>
         return 1;
       }
     }
-    return x.CompareTo(y);
+    return string.CompareOrdinal(x, y);
   }
 
   public int Compare(string? x, string? y)

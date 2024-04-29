@@ -11,8 +11,8 @@ internal static class Base
 {
   private static bool isDataLoaded = false;
 
-  public static SortedList<string, string>? nouns;
-  public static SortedList<string, string>? verbs;
+  private static SortedList<string, string>? nouns;
+  private static SortedList<string, string>? verbs;
 
   /// <summary>
   /// Load nouns and verbs inflection data.
