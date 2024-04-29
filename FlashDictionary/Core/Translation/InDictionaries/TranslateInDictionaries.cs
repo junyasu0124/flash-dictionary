@@ -22,9 +22,9 @@ internal static class TranslateInDictionaries
         .. sentencePreprocessed.Select(x => x.ConcatNormalization()).SelectMany(x => x),
         .. sentencePreprocessed.Select(x => x.ExtractNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y)),
         .. sentencePreprocessed.Select(x => x.SplitNormalization().Select(y => y.ParaphraseNormalization())).SelectMany(x => x.SelectMany(y => y)),
-      ]).Distinct().ToArray();
+      ]).ToHashSet();
 
-      var sentencesVariations = sentenceVariations.Select(x =>
+      HashSet<string> sentencesVariations = sentenceVariations.Select(x =>
       {
         List<char> usedSeparator = [];
         for (int i = 0; i < x.Length; i++)
@@ -66,9 +66,9 @@ internal static class TranslateInDictionaries
         }
 
         return sentences;
-      }).SelectMany(x => x).Distinct().ToArray();
+      }).SelectMany(x => x).ToHashSet();
 
-      searchedWordCount = sentenceVariations.Length;
+      searchedWordCount = sentenceVariations.Count;
       suggestions = [];
 
       Results results = new();
@@ -79,6 +79,7 @@ internal static class TranslateInDictionaries
       if (sentence.Length <= 2)
         originalSearchSentenceKey = null;
 
+      List<string> references = [];
       foreach (var sentencesVariation in groupedSentencesVariations)
       {
         (Dictionary<string, List<(string Original, string[] Meaning)>>? values, List<string>? suggestions) value;
@@ -97,6 +98,30 @@ internal static class TranslateInDictionaries
         foreach (var sentenceVariation in sentencesVariation)
         {
           if (value.values.TryGetValue(sentenceVariation, out var data))
+          {
+            results.AddItems(data);
+            for (var i = 0; i < data.Count; i++)
+            {
+              foreach (var meaning in data[i].Meaning)
+              {
+                var referencesResult = Reference.Normalize(meaning);
+                if (referencesResult != null)
+                  references.AddRange(referencesResult);
+              }
+            }
+          }
+        }
+      }
+
+      foreach (var reference in references)
+      {
+        if (sentencesVariations.Contains(reference) == false)
+        {
+          var value = GetValueInDictionaries.GetValue(GetValueInDictionaries.ConvertKeyToKeyInPositions(reference), null);
+          if (value.values == null || value.values.Count == 0)
+            continue;
+
+          if (value.values.TryGetValue(reference, out var data))
           {
             results.AddItems(data);
           }
