@@ -376,7 +376,6 @@ internal static class LoadDictionaryFile
           long previousPositionsOffset = 0;
           long addedPositionsOffset = 0;
 
-          long offsetOffset = 0;
           ((TripleChar key, long offset)[] offsets, long fileLength)? writeAddedResult = null;
 
           if (insertHead)
@@ -395,7 +394,6 @@ internal static class LoadDictionaryFile
             if (insertHead)
             {
               previousPositionsOffset = newStream.Length;
-              offsetOffset = newStream.Length;
             }
 
             byte[] buffer = new byte[1];
@@ -506,7 +504,7 @@ internal static class LoadDictionaryFile
                 return (positions, offsetTemp);
             }
           }
-          throw new Exception("items.Count must be greater than 1.");
+          throw new IndexOutOfRangeException("items.Count must be greater than 1.");
         }
         IEnumerable<(TripleChar key, Position? position)> OrganizeWriteAddedAsyncRetuned(((TripleChar key, long offset)[] offsets, long fileLegnth) returned)
         {

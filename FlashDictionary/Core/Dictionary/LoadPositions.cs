@@ -51,9 +51,7 @@ internal static class LoadPositions
             return new Position(long.Parse(first), long.Parse(second));
           }).ToArray();
         }
-        catch (Exception e)
-        {
-        }
+        catch { }
       }
     }
   }

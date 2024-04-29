@@ -104,6 +104,7 @@ public sealed partial class MainWindow : Window
         }
 
         translatedByGoogleTokenSource?.Cancel();
+        translatedByGoogleTokenSource?.Dispose();
         translatedByGoogleTokenSource = new();
         var byGoogle = await TranslatedByGoogle.TranslateAsync(text, translatedByGoogleTokenSource.Token);
         if (byGoogle is not null)
