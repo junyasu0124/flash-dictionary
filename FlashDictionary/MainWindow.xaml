@@ -9,8 +9,8 @@
    mc:Ignorable="d"
    Title="Flash Dictionary">
 
-   <StackPanel Loaded="Parent_Panel_Loaded" x:Name="Parent_Panel" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-      <RelativePanel x:Name="Input_Panel">
+   <RelativePanel x:Name="Parent_Panel" Loaded="Parent_Panel_Loaded" Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+      <RelativePanel x:Name="Input_Panel" RelativePanel.AlignTopWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True">
          <AutoSuggestBox x:Name="Input_Box" TextChanged="Input_Box_TextChanged" QuerySubmitted="Input_Box_QuerySubmitted" PreviewKeyDown="Input_Box_PreviewKeyDown" KeyDown="Input_Box_KeyDown" KeyUp="Input_Box_KeyUp" AutoMaximizeSuggestionArea="False" QueryIcon="Find" RelativePanel.AlignTopWithPanel="True" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True">
             <AutoSuggestBox.Style>
                <Style TargetType="AutoSuggestBox">
@@ -57,18 +57,21 @@
             </AutoSuggestBox.Style>
          </AutoSuggestBox>
       </RelativePanel>
-      <StackPanel x:Name="Result_Panel" Orientation="Vertical" ScrollViewer.VerticalScrollMode="Auto">
-         <TextBlock x:Name="Result_Header"/>
+      
+      <ScrollViewer VerticalScrollMode="Auto" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled" RelativePanel.Below="Input_Panel" RelativePanel.AlignBottomWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True">
+         <RelativePanel x:Name="Result_Panel" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+            <TextBlock x:Name="Result_Header" RelativePanel.AlignTopWithPanel="True" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True"/>
 
-         <ListView x:Name="Result_InDictionaries" SelectionMode="None" Style="{ThemeResource NoTransitionListViewStyle}" ScrollViewer.VerticalScrollMode="Enabled">
-            <ListView.ItemTemplate>
-               <DataTemplate x:DataType="translation:Result">
-                  <ContentPresenter Content="{x:Bind GenerateTextBlock()}" FontSize="16" Margin="0,0,0,8"/>
-               </DataTemplate>
-            </ListView.ItemTemplate>
-         </ListView>
-         
-         <TextBlock x:Name="Result_ByGoogle" TextWrapping="WrapWholeWords" IsTextSelectionEnabled="True"/>
-      </StackPanel>
-   </StackPanel>
+            <ListView x:Name="Result_InDictionaries" SelectionMode="None" Style="{ThemeResource NoTransitionListViewStyle}" ScrollViewer.VerticalScrollMode="Disabled" RelativePanel.Below="Result_Header" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True">
+               <ListView.ItemTemplate>
+                  <DataTemplate x:DataType="translation:Result">
+                     <ContentPresenter Content="{x:Bind GenerateTextBlock()}" FontSize="16" Margin="0,0,0,8"/>
+                  </DataTemplate>
+               </ListView.ItemTemplate>
+            </ListView>
+
+            <TextBlock x:Name="Result_ByGoogle" TextWrapping="WrapWholeWords" IsTextSelectionEnabled="True" RelativePanel.Below="Result_InDictionaries" RelativePanel.AlignLeftWithPanel="True" RelativePanel.AlignRightWithPanel="True"/>
+         </RelativePanel>
+      </ScrollViewer>
+   </RelativePanel>
 </Window>
