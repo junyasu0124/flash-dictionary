@@ -10,6 +10,7 @@ namespace FlashDictionary.Util.Collections;
 internal class FixedDictionary<TKey, TValue>(int capacity) where TKey : notnull
 {
   public int Capacity { get; } = capacity;
+  public int Count => dictionary.Count;
   private readonly SortedDictionary<TKey, LinkedListNode<KeyValuePair<TKey, TValue>>> dictionary = [];
   private readonly LinkedList<KeyValuePair<TKey, TValue>> linkedList = new();
 
@@ -67,7 +68,7 @@ internal class FixedDictionary<TKey, TValue>(int capacity) where TKey : notnull
     }
   }
 
-  private void RemoveOldest()
+  public void RemoveOldest()
   {
     LinkedListNode<KeyValuePair<TKey, TValue>>? oldestNode = linkedList.First;
     if (oldestNode == null)
