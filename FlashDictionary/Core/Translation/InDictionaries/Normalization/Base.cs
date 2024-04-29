@@ -29,7 +29,7 @@ internal static class Base
     nouns = JsonSerializer.Deserialize<SortedList<string, string>>((await FileIO.ReadTextAsync(nounsFile)).Trim());
 
     verbs = JsonSerializer.Deserialize<SortedList<string, string>>((await FileIO.ReadTextAsync(verbsFile)).Trim());
-    
+
     isDataLoaded = true;
   }
 
@@ -41,15 +41,15 @@ internal static class Base
   public static IEnumerable<string> Normalize(string word)
   {
     if (!isDataLoaded)
-      throw new InvalidOperationException("Data at FlashDictionary.Core.Translation.InDictionaries.Normalization.Base is not loaded.");
+      throw new InvalidOperationException($"Data at {nameof(Base)} is not loaded.");
 
     yield return word;
 
-    if (nouns!.TryGetValue(word, out string? noun))
+    if (nouns!.TryGetValue(word, out var noun))
     {
       yield return noun;
     }
-    if (verbs!.TryGetValue(word, out string? verb))
+    if (verbs!.TryGetValue(word, out var verb))
     {
       yield return verb;
     }
