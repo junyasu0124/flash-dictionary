@@ -3,7 +3,6 @@ using FlashDictionary.Util;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -47,7 +46,6 @@ internal static class LoadDictionaryFile
     {
       var start = DateTime.Now;
       SortedDictionary<string, List<Position>>? items = await ReadAddingFile(filePath, format, encoding);
-      Debug.WriteLine($"---{(DateTime.Now - start).TotalMilliseconds} ms---");
 
       if (items.Count == 0)
       {
