@@ -23,7 +23,7 @@ internal class KeyComparer : IComparer<string>
 
     for (int i = 0; i < Math.Min(x.Length, y.Length); i++)
     {
-      if ((loweredX[i]).IsSmallAlphabet())
+      if (loweredX[i].IsSmallAlphabet())
       {
         if (loweredY[i].IsSmallAlphabet() == false)
         {
@@ -44,7 +44,8 @@ internal class KeyComparer : IComparer<string>
         return 1;
       }
     }
-    return string.CompareOrdinal(x, y);
+
+    return x.Length.CompareTo(y.Length);
   }
 
   public int Compare(string? x, string? y)
