@@ -1,15 +1,12 @@
 using FlashDictionary.Core.Dictionary;
 using FlashDictionary.Core.Translation;
 using FlashDictionary.Core.Translation.InDictionaries.Normalization;
-using FlashDictionary.Util;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.System;
@@ -43,14 +40,14 @@ public sealed partial class MainWindow : Window
 
     //{
     //  var loadDictionaryFileStart = DateTime.Now;
-    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\ejdict\ejdict-hand-utf8.txt""", DictionaryDataFormat.TabSeparated, System.TextEncoding.UTF8, true, true);
+    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\ejdict\ejdict-hand-utf8.txt""", DictionaryDataFormat.TabSeparated, System.Text.Encoding.UTF8, true, true);
     //  Result_Header.Text = $"LoadDictionaryFile: {(DateTime.Now - loadDictionaryFileStart).TotalMilliseconds} ms, {Enum.GetName(typeof(LoadState), loadResult)}";
     //}
 
     //{
     //  var loadDictionaryFileStart = DateTime.Now;
-    //  System.TextEncoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\EIJIRO144-10\EIJIRO144-10.txt""", DictionaryDataFormat.Eijiro, System.TextEncoding.GetEncoding("shift_jis"), true, true);
+    //  System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+    //  var loadResult = await LoadDictionaryFile.LoadAsync("""C:\Users\yasue\Downloads\EIJIRO144-10\EIJIRO144-10.txt""", DictionaryDataFormat.Eijiro, System.Text.Encoding.GetEncoding("shift_jis"), true, true);
     //  Result_Header.Text = $"LoadDictionaryFile: {(DateTime.Now - loadDictionaryFileStart).TotalMilliseconds} ms, {Enum.GetName(typeof(LoadState), loadResult)}";
     //}
 
