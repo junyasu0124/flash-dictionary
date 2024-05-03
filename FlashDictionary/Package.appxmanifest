@@ -9,7 +9,7 @@
 
   <Identity
     Name="FlashDictionary"
-    Publisher="CN=yasue"
+    Publisher="CN=junyasu0124"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="7420108f-f9e8-40fd-a223-53e24b5f00a2" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
