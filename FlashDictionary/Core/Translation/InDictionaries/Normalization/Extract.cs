@@ -36,13 +36,11 @@ internal static class Extract
           for (var i = 0; i < combination.Count; i++)
           {
             builder.Append(words[combination[i]]);
-            builder.Append(' ');
+            if (i != combination.Count - 1)
+              builder.Append(' ');
           }
-          if (combination.Count > 1)
-          {
-            var @string = builder.ToString().Trim();
-            yield return @string;
-          }
+          var extracted = builder.ToString();
+          yield return extracted;
         }
         break;
     }
