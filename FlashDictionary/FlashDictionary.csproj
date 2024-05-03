@@ -20,6 +20,17 @@
     <PackageProjectUrl>https://github.com/junyasu0124/flash-dictionary</PackageProjectUrl>
     <RepositoryUrl>https://github.com/junyasu0124/flash-dictionary</RepositoryUrl>
     <Nullable>enable</Nullable>
+    <GenerateAppInstallerFile>True</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <PackageCertificateThumbprint>5338F4A44EF226580425EAAEC8C6961EE84A79FA</PackageCertificateThumbprint>
+    <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxPackageDir>C:\Users\yasue\インストーラー\FlashDictionary</AppxPackageDir>
+    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+    <GenerateTestArtifacts>True</GenerateTestArtifacts>
+    <AppxBundle>Never</AppxBundle>
+    <AppInstallerUri>C:\Users\yasue\インストーラー\FlashDictionary</AppInstallerUri>
+    <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Data\Dictionaries\nouns.json" />
