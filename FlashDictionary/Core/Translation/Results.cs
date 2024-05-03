@@ -21,7 +21,11 @@ internal class Results
 
   public List<Result> Items { get; }
 
-  public void AddItems(List<(string Original, string[] Meaning)> items)
+  public void Add((string Original, string[] Meaning) item)
+  {
+    Items.Add(new(item));
+  }
+  public void AddRange(List<(string Original, string[] Meaning)> items)
   {
     Items.AddRange(items.Select(item => new Result(item)));
   }

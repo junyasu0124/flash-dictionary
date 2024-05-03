@@ -99,7 +99,7 @@ internal static class TranslateInDictionaries
         {
           if (value.values.TryGetValue(sentenceVariation, out var data))
           {
-            results.AddItems(data);
+            results.AddRange(data);
             for (var i = 0; i < data.Count; i++)
             {
               foreach (var meaning in data[i].Meaning)
@@ -121,9 +121,13 @@ internal static class TranslateInDictionaries
           if (value.values == null || value.values.Count == 0)
             continue;
 
-          if (value.values.TryGetValue(reference, out var data))
+          if (value.values.TryGetValue(reference.ToLowerInvariant(), out var data))
           {
-            results.AddItems(data);
+            foreach (var item in data)
+            {
+              if (item.Original == reference)
+                results.Add(item);
+            }
           }
         }
       }
